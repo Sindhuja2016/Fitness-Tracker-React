@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@keyframes zoom {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.15);
+  }
+}
+
+.completed-date {
+  background: #f97316 !important;
+  color: white !important;
+  border-radius: 9999px !important;
+}
