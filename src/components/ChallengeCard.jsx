@@ -1,17 +1,22 @@
 import { Users, Calendar, Heart } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-
 const ChallengeCard = ({ challenge, showLeaveButton, onLeave }) => {
   const navigate = useNavigate();
+
   const favourites =
     JSON.parse(localStorage.getItem("favourites")) || [];
 
   const [isFavourite, setIsFavourite] = useState(
-    favourites.includes(challenge.id)
+    favourites.includes(challenge._id)
   );
+
+  const user =
+    JSON.parse(localStorage.getItem("user")) || {};
+
+  const isPremiumUser = user.isPremium === true;
+
   const toggleFavourite = () => {
     const favourites =
       JSON.parse(localStorage.getItem("favourites")) || [];
@@ -20,28 +25,23 @@ const ChallengeCard = ({ challenge, showLeaveButton, onLeave }) => {
 
     if (favourites.includes(challenge._id)) {
       updated = favourites.filter(
-    (id) => id !== challenge._id);
-  setIsFavourite(false);
-   } else {
-    updated = [...favourites, challenge._id];
-  setIsFavourite(true);
-   }
+        (id) => id !== challenge._id
+      );
+      setIsFavourite(false);
+    } else {
+      updated = [...favourites, challenge._id];
+      setIsFavourite(true);
+    }
+
     localStorage.setItem(
       "favourites",
       JSON.stringify(updated)
     );
   };
-  const user =
-    JSON.parse(localStorage.getItem("user")) || {};
-
-  const userPlan = user.plan || "Free";
 
   const handleChallengeClick = () => {
-    if (
-      challenge.type === "Premium" &&
-      userPlan === "Free"
-    ) {
-      navigate("/upgrade");
+    if (challenge.isPremium && !isPremiumUser) {
+      navigate("/payment");
       return;
     }
 
@@ -49,7 +49,10 @@ const ChallengeCard = ({ challenge, showLeaveButton, onLeave }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col relative">
+    <div
+      onClick={handleChallengeClick}
+      className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col relative cursor-pointer"
+    >
 
       {/* Image */}
       <img
@@ -66,12 +69,16 @@ const ChallengeCard = ({ challenge, showLeaveButton, onLeave }) => {
           <span className="text-xs font-medium bg-orange-100 text-orange-500 px-2 py-1 rounded-full">
             {challenge.category}
           </span>
+
           <span className="text-xs font-medium bg-gray-100 text-gray-500 px-2 py-1 rounded-full">
             {challenge.level}
           </span>
-          <span className="text-xs font-medium bg-gray-100 text-gray-500 px-2 py-1 rounded-full">
-            {challenge.type}
-          </span>
+
+          {challenge.isPremium && (
+            <span className="text-xs font-medium bg-yellow-100 text-yellow-600 px-2 py-1 rounded-full">
+              ⭐ Premium
+            </span>
+          )}
         </div>
 
         {/* Title */}
@@ -80,7 +87,12 @@ const ChallengeCard = ({ challenge, showLeaveButton, onLeave }) => {
             {challenge.title}
           </h3>
 
-          <button onClick={toggleFavourite}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavourite();
+            }}
+          >
             <Heart
               size={20}
               fill={isFavourite ? "currentColor" : "none"}
@@ -100,51 +112,52 @@ const ChallengeCard = ({ challenge, showLeaveButton, onLeave }) => {
 
         {/* Stats */}
         <div className="flex items-center gap-4 text-sm text-gray-500 mt-auto">
+
           <div className="flex items-center gap-1">
             <Users size={15} className="text-orange-400" />
-            <span>{challenge.participants?.toLocaleString()} joined</span>
+            <span>
+              {challenge.participants?.toLocaleString()} joined
+            </span>
           </div>
+
           <div className="flex items-center gap-1">
             <Calendar size={15} className="text-orange-400" />
             <span>{challenge.duration}</span>
           </div>
+
         </div>
 
-
-        {challenge.type === "Premium" &&
-          userPlan === "Free" && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-xl">
-              <p className="text-white font-semibold">
-                🔒 Premium Only
-              </p>
-            </div>
-          )}
+        {/* Premium Overlay */}
+        {challenge.isPremium && !isPremiumUser && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-2xl pointer-events-none">
+            <p className="text-white font-semibold text-lg">
+              🔒 Premium Only
+            </p>
+          </div>
+        )}
 
         {/* View Button */}
         {!showLeaveButton && (
-          <Link
-            to={
-              challenge.type === "Premium" &&
-                userPlan === "Free"
-                ? "/upgrade"
-                : `/challenges/${challenge._id}`
-            }
-            className="block w-full mt-4"
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleChallengeClick();
+            }}
+            className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg"
           >
-            <button className="w-full bg-orange-500 text-white py-2 rounded-lg">
-              {challenge.type === "Premium" &&
-                userPlan === "Free"
-                ? "Upgrade to Access"
-                : "View Challenge"}
-            </button>
-          </Link>
+            {challenge.isPremium && !isPremiumUser
+              ? "Upgrade to Access"
+              : "View Challenge"}
+          </button>
         )}
 
         {/* Leave Button */}
-
         {showLeaveButton && (
           <button
-            onClick={() => onLeave(challenge.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onLeave(challenge._id);
+            }}
             className="w-full mt-2 border border-red-400 text-red-400 hover:bg-red-50 py-2.5 rounded-xl font-medium transition-all duration-200"
           >
             Leave Challenge
@@ -155,4 +168,6 @@ const ChallengeCard = ({ challenge, showLeaveButton, onLeave }) => {
     </div>
   );
 };
-export default ChallengeCard
+
+export default ChallengeCard;
+
