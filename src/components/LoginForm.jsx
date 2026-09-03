@@ -1,5 +1,5 @@
 import { useFormik } from "formik";
-import { signinSchema } from "../validation/signinschema";
+import { signinSchema } from "../validation/signinSchema";
 import { Link, useNavigate } from "react-router-dom";
 import GlassCard from "./GlassCard";
 import { Eye, EyeOff } from "lucide-react";
